@@ -13,3 +13,16 @@ const userSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model('User', userSchema);
+
+email: { type: String, required: true, unique: true },
+
+role: {
+  type: String,
+  enum: ['jobSeeker', 'recruiter', 'admin'],
+  default: 'jobSeeker'
+},
+
+status: {
+  type: String,
+  enum: ['pending', 'approved', 'rejected']
+}
