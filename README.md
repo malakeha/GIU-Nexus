@@ -18,3 +18,4 @@ The platform integrates AI-powered features using the Hugging Face Inference API
 - Member 8: [ali sherif]
 - Member 9: [omar abdelkarem]
 - Member 10: [obay habbash]
+Mostafa contributed here
