@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+
     email: {
       type: String,
       required: true,
@@ -14,34 +15,53 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+
     password: {
       type: String,
       required: true,
     },
+
     profilePicture: {
       type: String,
       trim: true,
+      default: '',
     },
+
     bio: {
       type: String,
       trim: true,
+      default: '',
     },
+
     skills: {
       type: [String],
       default: [],
     },
+
+    savedJobs: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'JobPost',
+      },
+    ],
+
     role: {
       type: String,
       enum: ['jobSeeker', 'recruiter', 'admin'],
       default: 'jobSeeker',
     },
+
     status: {
       type: String,
       enum: ['pending', 'approved', 'rejected'],
+      default: 'approved',
     },
+
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
   },
   {
-    timestamps: { createdAt: 'createdAt', updatedAt: false },
+    timestamps: true,
   }
 );
 
