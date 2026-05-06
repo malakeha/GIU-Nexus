@@ -1,7 +1,6 @@
-// ============================================================
+
 // jobRoutes.js  —  MALAK's file
-// All /api/v1/jobs routes.
-// ============================================================
+
 const express = require('express');
 const router  = express.Router();
 const { protect, authorize } = require('../middleware/auth');

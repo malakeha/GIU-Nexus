@@ -1,14 +1,6 @@
-// ============================================================
+
 // jobController.js  —  MALAK's file
-// GET    /api/v1/jobs            — Public (paginated/filtered)
-// POST   /api/v1/jobs            — Recruiter (approved)
-// GET    /api/v1/jobs/:id        — Public
-// PATCH  /api/v1/jobs/:id        — Recruiter (owner)
-// DELETE /api/v1/jobs/:id        — Recruiter (owner) / Admin
-// POST   /api/v1/jobs/:jobId/apply   — Job Seeker
-// GET    /api/v1/jobs/:jobId/applicants — Recruiter (owner)
-// ============================================================
-const JobPost     = require('../models/JobPost');
+
 const Application = require('../models/Application');
 const { classifyJob } = require('./hfController');
 
