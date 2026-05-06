@@ -1,7 +1,7 @@
 const User = require("../models/userModel");
 const JobPost = require("../models/JobPost");
 const Application = require("../models/applicationModel");
-
+const bcrypt = require('bcryptjs');
 // @desc    Get logged-in user profile
 // @route   GET /api/v1/profile
 // @access  Private
@@ -86,6 +86,33 @@ exports.getAdminStats = async (req, res, next) => {
       success: true,
       stats: { usersByRole, jobsByStatus, appsByStatus, topJobs },
     });
+  } catch (err) {
+    next(err);
+  }
+};
+// @desc    Change password
+// @route   PATCH /api/v1/profile/change-password
+// @access  Private
+exports.changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    const user = await User.findById(req.user._id);
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Current password is incorrect' });
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'New password must be at least 6 characters' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    res.status(200).json({ success: true, message: 'Password updated successfully' });
   } catch (err) {
     next(err);
   }
