@@ -5,6 +5,8 @@
 const jwt  = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/userModel'); // FIXED: userModel.js instead of User
+const crypto = require('crypto');
+const { sendResetEmail } = require('../services/emailService');
 
 const signToken = (user) =>
   jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { // FIXED: using id instead of _id for auth middleware compatibility
@@ -104,10 +106,6 @@ exports.login = async (req, res, next) => {
 exports.logout = (req, res) => {
   res.status(200).json({ success: true, message: 'Logged out successfully' });
 };
-<<<<<<< HEAD
-=======
-const crypto = require('crypto');
-const { sendResetEmail } = require('../services/emailService');
 
 // @desc    Forgot password
 // @route   POST /api/v1/auth/forgot-password
@@ -207,4 +205,3 @@ exports.resetPassword = async (req, res, next) => {
     next(error);
   }
 };
->>>>>>> origin/main
