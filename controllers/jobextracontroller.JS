@@ -7,7 +7,7 @@
 // ============================================================
 const JobPost = require('../models/JobPost');
 const User    = require('../models/User');
-const { getEmbeddings, cosineSimilarity } = require('./hfController');
+const { getEmbeddings, cosineSimilarity } = require('./hfcontroller');
 
 /**
  * GET /api/v1/jobs/recommended

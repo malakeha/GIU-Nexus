@@ -2,7 +2,7 @@
 // jobController.js  —  MALAK's file
 
 const Application = require('../models/Application');
-const { classifyJob } = require('./hfController');
+const { classifyJob } = require('./hfcontroller');
 
 /**
  * GET /api/v1/jobs
