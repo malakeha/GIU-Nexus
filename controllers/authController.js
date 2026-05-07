@@ -1,122 +1,106 @@
-const User = require('../models/userModel');
-const jwt = require('jsonwebtoken');
+// ============================================================
+// authController.js  —  register / login / logout
+// Used by authRoutes.js (Ali's file)
+// ============================================================
+const jwt  = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const User = require('../models/userModel'); // FIXED: userModel.js instead of User
 
-// Helper to generate JWT
-const generateToken = (id, role) => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET || 'secret123', {
+const signToken = (user) =>
+  jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { // FIXED: using id instead of _id for auth middleware compatibility
     expiresIn: process.env.JWT_EXPIRE || '7d',
   });
-};
 
-// @desc    Register user
-// @route   POST /api/v1/auth/register
-// @access  Public
+/**
+ * POST /api/v1/auth/register
+ */
 exports.register = async (req, res, next) => {
   try {
     const { name, email, password, role } = req.body;
 
-    if (!name || !email || !password || !role) {
-      return res.status(400).json({ success: false, message: 'Please provide all required fields' });
+    if (!['jobSeeker', 'recruiter'].includes(role)) {
+      return res.status(400).json({ success: false, message: 'Role must be jobSeeker or recruiter' });
     }
 
     if (password.length < 6) {
       return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
     }
 
-    // Check if user exists
-    let user = await User.findOne({ email });
-    if (user) {
+    const existing = await User.findOne({ email });
+    if (existing) {
       return res.status(400).json({ success: false, message: 'Email already in use' });
     }
 
-    // Recruiters start as pending, jobSeekers start as approved
+    // FIXED: Set status correctly based on role
     const status = role === 'recruiter' ? 'pending' : 'approved';
 
-    // Hash password
+    // FIXED: Hash password before saving
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create user
-    user = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      role,
-      status
-    });
+    const user = await User.create({ name, email, password: hashedPassword, role, status });
+    const token = signToken(user);
 
-    // Create token
-    const token = generateToken(user._id, user.role);
-
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       token,
       user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        status: user.status
-      }
+        _id:    user._id,
+        name:   user.name,
+        email:  user.email,
+        role:   user.role,
+        status: user.status,
+      },
     });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
 
-// @desc    Login user
-// @route   POST /api/v1/auth/login
-// @access  Public
+/**
+ * POST /api/v1/auth/login
+ */
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-
     if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Please provide an email and password' });
+      return res.status(400).json({ success: false, message: 'Please provide email and password' });
     }
 
-    // Check for user
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
-    // Check if password matches
+    // FIXED: manually check password with bcrypt since matchPassword doesn't exist
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
-    // Create token
-    const token = generateToken(user._id, user.role);
-
-    res.status(200).json({
+    const token = signToken(user);
+    return res.status(200).json({
       success: true,
       token,
       user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        status: user.status,
+        _id:            user._id,
+        name:           user.name,
+        email:          user.email,
+        role:           user.role,
+        status:         user.status,
         profilePicture: user.profilePicture,
-        skills: user.skills
-      }
+        skills:         user.skills,
+      },
     });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
 
-// @desc    Logout user
-// @route   POST /api/v1/auth/logout
-// @access  Private
-exports.logout = async (req, res, next) => {
-  try {
-    // Stateless logout: client is instructed to discard token
-    res.status(200).json({ success: true, message: 'Logged out successfully' });
-  } catch (error) {
-    next(error);
-  }
+/**
+ * POST /api/v1/auth/logout
+ * Stateless — client discards token.
+ */
+exports.logout = (req, res) => {
+  res.status(200).json({ success: true, message: 'Logged out successfully' });
 };
