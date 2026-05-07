@@ -1,16 +1,9 @@
 const express = require("express");
 const router = express.Router();
+const { protect, authorize } = require("../middleware/auth");
+const { getAdminStats } = require("../controllers/profilecontroller");
 
-const {
-  getUsers,
-  getUserById,
-  updateUserStatus,
-  deleteUser,
-} = require("../controllers/usercontroller");
-
-router.get("/users", getUsers);
-router.get("/users/:id", getUserById);
-router.patch("/users/:id/status", updateUserStatus);
-router.delete("/users/:id", deleteUser);
+// GET /api/v1/admin/stats
+router.get("/stats", protect, authorize("admin"), getAdminStats);
 
 module.exports = router;

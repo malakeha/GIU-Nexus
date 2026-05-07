@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // ============================================================
 // authRoutes.js  —  ALI's file
 // Wires all authentication endpoints.
@@ -18,5 +19,6 @@ router.patch('/reset-password/:token', resetPassword);
 
 // Private
 router.post('/logout', protect, logout);
+=======
+>>>>>>> origin/main
 
-module.exports = router;

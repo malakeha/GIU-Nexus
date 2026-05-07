@@ -104,3 +104,107 @@ exports.login = async (req, res, next) => {
 exports.logout = (req, res) => {
   res.status(200).json({ success: true, message: 'Logged out successfully' });
 };
+<<<<<<< HEAD
+=======
+const crypto = require('crypto');
+const { sendResetEmail } = require('../services/emailService');
+
+// @desc    Forgot password
+// @route   POST /api/v1/auth/forgot-password
+// @access  Public
+exports.forgotPassword = async (req, res, next) => {
+  try {
+    const user = await User.findOne({ email: req.body.email });
+
+    // Always return 200 to avoid email enumeration
+    if (!user) {
+      return res.status(200).json({
+        success: true,
+        message: 'Password reset email sent',
+      });
+    }
+
+    // Generate raw token
+    const resetToken = crypto.randomBytes(20).toString('hex');
+
+    // Hash and store on user
+    user.resetPasswordToken = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
+
+    // 10 minute expiry
+    user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+
+    await user.save();
+
+    // Send email
+    const resetUrl = `http://localhost:5000/api/v1/auth/reset-password/${resetToken}`;
+    await sendResetEmail(user.email, resetUrl);
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset email sent',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Reset password
+// @route   PATCH /api/v1/auth/reset-password/:token
+// @access  Public
+exports.resetPassword = async (req, res, next) => {
+  try {
+    // Hash the incoming token
+    const resetPasswordToken = crypto
+      .createHash('sha256')
+      .update(req.params.token)
+      .digest('hex');
+
+    // Find user with valid token that hasn't expired
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token is invalid or has expired',
+      });
+    }
+
+    if (!req.body.password || req.body.password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters',
+      });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(req.body.password, salt);
+
+    // Clear reset fields
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save();
+
+    const token = generateToken(user._id, user.role);
+
+    res.status(200).json({
+      success: true,
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+>>>>>>> origin/main
