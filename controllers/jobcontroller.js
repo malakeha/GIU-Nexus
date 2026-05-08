@@ -1,9 +1,9 @@
 
 // jobController.js  —  MALAK's file
 
+const JobPost     = require('../models/JobPost');
 const Application = require('../models/Application');
-const { classifyJob } = require('./hfcontroller');
-
+const { classifyJob } = require('./hfController');
 /**
  * GET /api/v1/jobs
  * Public — paginated + filterable by keyword, location, type, status.
