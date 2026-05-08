@@ -1,118 +1,77 @@
-const User = require("../models/userModel");
-const JobPost = require("../models/JobPost");
-const Application = require("../models/applicationModel");
+
 const bcrypt = require('bcryptjs');
-// @desc    Get logged-in user profile
-// @route   GET /api/v1/profile
-// @access  Private
+const User   = require('../models/User');
+const { extractSkillsFromBio } = require('./hfController');
+
+
 exports.getProfile = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user._id).select("-password");
-    res.status(200).json({ success: true, user });
+    const user = await User.findById(req.user._id);
+    return res.status(200).json({ success: true, user });
   } catch (err) {
     next(err);
   }
 };
 
-// @desc    Update logged-in user profile
-// @route   PATCH /api/v1/profile
-// @access  Private
+
 exports.updateProfile = async (req, res, next) => {
   try {
-    const allowedFields = ["name", "bio", "profilePicture"];
+    const allowed = ['name', 'bio', 'profilePicture'];
     const updates = {};
-    allowedFields.forEach((field) => {
-      if (req.body[field] !== undefined) updates[field] = req.body[field];
-    });
+    allowed.forEach(f => { if (req.body[f] !== undefined) updates[f] = req.body[f]; });
 
-    const user = await User.findByIdAndUpdate(req.user._id, updates, {
-      new: true,
-      runValidators: true,
-    }).select("-password");
-
-    res.status(200).json({ success: true, user });
+    const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true, runValidators: true });
+    return res.status(200).json({ success: true, user });
   } catch (err) {
     next(err);
   }
 };
 
-// @desc    Admin platform statistics
-// @route   GET /api/v1/admin/stats
-// @access  Admin
-exports.getAdminStats = async (req, res, next) => {
-  try {
-    const usersByRoleRaw = await User.aggregate([
-      { $group: { _id: "$role", count: { $sum: 1 } } },
-    ]);
-    const usersByRole = {};
-    usersByRoleRaw.forEach((r) => (usersByRole[r._id] = r.count));
 
-    const jobsByStatusRaw = await JobPost.aggregate([
-      { $group: { _id: "$status", count: { $sum: 1 } } },
-    ]);
-    const jobsByStatus = {};
-    jobsByStatusRaw.forEach((r) => (jobsByStatus[r._id] = r.count));
-
-    const appsByStatusRaw = await Application.aggregate([
-      { $group: { _id: "$status", count: { $sum: 1 } } },
-    ]);
-    const appsByStatus = {};
-    appsByStatusRaw.forEach((r) => (appsByStatus[r._id] = r.count));
-
-    const topJobs = await Application.aggregate([
-      { $group: { _id: "$job", applicationCount: { $sum: 1 } } },
-      { $sort: { applicationCount: -1 } },
-      { $limit: 5 },
-      {
-        $lookup: {
-          from: "jobposts",
-          localField: "_id",
-          foreignField: "_id",
-          as: "jobInfo",
-        },
-      },
-      { $unwind: "$jobInfo" },
-      {
-        $project: {
-          _id: 1,
-          title: "$jobInfo.title",
-          company: "$jobInfo.company",
-          applicationCount: 1,
-        },
-      },
-    ]);
-
-    res.status(200).json({
-      success: true,
-      stats: { usersByRole, jobsByStatus, appsByStatus, topJobs },
-    });
-  } catch (err) {
-    next(err);
-  }
-};
-// @desc    Change password
-// @route   PATCH /api/v1/profile/change-password
-// @access  Private
 exports.changePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
-
-    const user = await User.findById(req.user._id);
-    const isMatch = await bcrypt.compare(currentPassword, user.password);
-
-    if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Current password is incorrect' });
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Provide currentPassword and newPassword' });
     }
-
-    if (!newPassword || newPassword.length < 6) {
+    if (newPassword.length < 6) {
       return res.status(400).json({ success: false, message: 'New password must be at least 6 characters' });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
+    const user = await User.findById(req.user._id).select('+password');
+    const match = await user.matchPassword(currentPassword);
+    if (!match) {
+      return res.status(401).json({ success: false, message: 'Current password is incorrect' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+    return res.status(200).json({ success: true, message: 'Password updated successfully' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+exports.extractSkills = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user.bio || user.bio.trim() === '') {
+      return res.status(400).json({ success: false, message: 'Bio is empty. Update your profile first.' });
+    }
+
+    const extracted = await extractSkillsFromBio(user.bio);
+
+    if (extracted === null) {
+     
+      return res.status(200).json({ success: true, skills: user.skills, extracted: user.skills });
+    }
+
+    user.skills = extracted;
     await user.save();
 
-    res.status(200).json({ success: true, message: 'Password updated successfully' });
+    return res.status(200).json({ success: true, skills: user.skills, extracted });
   } catch (err) {
     next(err);
   }
