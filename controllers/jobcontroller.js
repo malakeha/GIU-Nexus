@@ -3,7 +3,7 @@
 
 const JobPost     = require('../models/JobPost');
 const Application = require('../models/Application');
-const { classifyJob } = require('./hfController');
+const { classifyJob } = require('./hfcontroller');
 /**
  * GET /api/v1/jobs
  * Public — paginated + filterable by keyword, location, type, status.
