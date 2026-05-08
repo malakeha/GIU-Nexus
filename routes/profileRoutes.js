@@ -7,7 +7,7 @@ const {
   updateProfile,
   changePassword,
   extractSkills,
-} = require('../controllers/profileController');
+} = require('../controllers/profilecontroller');
 
 
 router.use(protect);
