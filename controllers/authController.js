@@ -1,15 +1,15 @@
 // ============================================================
 // authController.js  —  register / login / logout
-// Used by authRoutes.js (Ali's file)
+// Used by authRoutes.js (Aahmed's file)
 // ============================================================
 const jwt  = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const User = require('../models/userModel'); // FIXED: userModel.js instead of User
+const User = require('../models/userModel');
 const crypto = require('crypto');
 const { sendResetEmail } = require('../services/emailService');
 
 const signToken = (user) =>
-  jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { // FIXED: using id instead of _id for auth middleware compatibility
+  jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE || '7d',
   });
 
@@ -33,10 +33,8 @@ exports.register = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Email already in use' });
     }
 
-    // FIXED: Set status correctly based on role
     const status = role === 'recruiter' ? 'pending' : 'approved';
 
-    // FIXED: Hash password before saving
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -74,7 +72,6 @@ exports.login = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
-    // FIXED: manually check password with bcrypt since matchPassword doesn't exist
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
@@ -107,14 +104,13 @@ exports.logout = (req, res) => {
   res.status(200).json({ success: true, message: 'Logged out successfully' });
 };
 
-// @desc    Forgot password
-// @route   POST /api/v1/auth/forgot-password
-// @access  Public
+/**
+ * POST /api/v1/auth/forgot-password
+ */
 exports.forgotPassword = async (req, res, next) => {
   try {
     const user = await User.findOne({ email: req.body.email });
 
-    // Always return 200 to avoid email enumeration
     if (!user) {
       return res.status(200).json({
         success: true,
@@ -122,23 +118,28 @@ exports.forgotPassword = async (req, res, next) => {
       });
     }
 
-    // Generate raw token
     const resetToken = crypto.randomBytes(20).toString('hex');
 
-    // Hash and store on user
     user.resetPasswordToken = crypto
       .createHash('sha256')
       .update(resetToken)
       .digest('hex');
 
-    // 10 minute expiry
     user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
 
     await user.save();
 
-    // Send email
-    const resetUrl = `http://localhost:5000/api/v1/auth/reset-password/${resetToken}`;
-    await sendResetEmail(user.email, resetUrl);
+    const resetUrl = `${req.protocol}://${req.get('host')}/api/v1/auth/reset-password/${resetToken}`;
+
+    try {
+      await sendResetEmail(user.email, resetUrl);
+    } catch (emailErr) {
+      user.resetPasswordToken  = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save();
+      console.error('Email error:', emailErr.message);
+      return res.status(500).json({ success: false, message: 'Email could not be sent' });
+    }
 
     res.status(200).json({
       success: true,
@@ -149,18 +150,16 @@ exports.forgotPassword = async (req, res, next) => {
   }
 };
 
-// @desc    Reset password
-// @route   PATCH /api/v1/auth/reset-password/:token
-// @access  Public
+/**
+ * PATCH /api/v1/auth/reset-password/:token
+ */
 exports.resetPassword = async (req, res, next) => {
   try {
-    // Hash the incoming token
     const resetPasswordToken = crypto
       .createHash('sha256')
       .update(req.params.token)
       .digest('hex');
 
-    // Find user with valid token that hasn't expired
     const user = await User.findOne({
       resetPasswordToken,
       resetPasswordExpire: { $gt: Date.now() },
@@ -180,23 +179,22 @@ exports.resetPassword = async (req, res, next) => {
       });
     }
 
-    // Hash new password
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(req.body.password, salt);
 
-    // Clear reset fields
-    user.resetPasswordToken = undefined;
+    user.resetPasswordToken  = undefined;
     user.resetPasswordExpire = undefined;
 
     await user.save();
 
-    const token = generateToken(user._id, user.role);
+    // FIXED: was generateToken(user._id, user.role) which is undefined — now uses signToken(user)
+    const token = signToken(user);
 
     res.status(200).json({
       success: true,
       token,
       user: {
-        _id: user._id,
+        _id:  user._id,
         name: user.name,
         role: user.role,
       },
