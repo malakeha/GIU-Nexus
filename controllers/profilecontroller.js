@@ -1,8 +1,6 @@
-
 const bcrypt = require('bcryptjs');
 const User   = require('../models/User');
-const { extractSkillsFromBio } = require('./hfController');
-
+const { extractSkillsFromBio } = require('./hfcontroller'); // FIXED: lowercase c to match actual filename
 
 exports.getProfile = async (req, res, next) => {
   try {
@@ -12,7 +10,6 @@ exports.getProfile = async (req, res, next) => {
     next(err);
   }
 };
-
 
 exports.updateProfile = async (req, res, next) => {
   try {
@@ -27,7 +24,6 @@ exports.updateProfile = async (req, res, next) => {
   }
 };
 
-
 exports.changePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -39,19 +35,21 @@ exports.changePassword = async (req, res, next) => {
     }
 
     const user = await User.findById(req.user._id).select('+password');
-    const match = await user.matchPassword(currentPassword);
+
+    // FIXED: matchPassword doesn't exist on User model — use bcrypt.compare directly
+    const match = await bcrypt.compare(currentPassword, user.password);
     if (!match) {
       return res.status(401).json({ success: false, message: 'Current password is incorrect' });
     }
 
-    user.password = newPassword;
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
     await user.save();
     return res.status(200).json({ success: true, message: 'Password updated successfully' });
   } catch (err) {
     next(err);
   }
 };
-
 
 exports.extractSkills = async (req, res, next) => {
   try {
@@ -64,7 +62,6 @@ exports.extractSkills = async (req, res, next) => {
     const extracted = await extractSkillsFromBio(user.bio);
 
     if (extracted === null) {
-     
       return res.status(200).json({ success: true, skills: user.skills, extracted: user.skills });
     }
 
