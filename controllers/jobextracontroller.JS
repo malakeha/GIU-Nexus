@@ -7,7 +7,7 @@
 // ============================================================
 const JobPost = require('../models/JobPost');
 const User    = require('../models/User');
-const { getEmbeddings, cosineSimilarity } = require('./hfController');
+const { getEmbeddings, cosineSimilarity } = require('./hfcontroller');
 
 /**
  * GET /api/v1/jobs/recommended
@@ -15,7 +15,7 @@ const { getEmbeddings, cosineSimilarity } = require('./hfController');
  * Falls back to unranked open jobs if HF call fails.
  */
 exports.getRecommendedJobs = async (req, res, next) => {
-  try {
+  try { 
     const user = await User.findById(req.user._id);
 
     if (!user.skills || user.skills.length === 0) {

@@ -11,7 +11,7 @@ const {
   updateUserStatus,
   deleteUser,
   getAdminStats,
-} = require('../controllers/userController');
+} = require('../controllers/usercontroller');
 
 // All routes: must be logged in AND be admin
 router.use(protect, authorize('admin'));
