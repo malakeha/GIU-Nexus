@@ -1,1 +1,1 @@
-const SavedJobsPage = () => { return React.createElement('div', null, 'SavedJobsPage') }; export default SavedJobsPage;
+
