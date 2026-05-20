@@ -1,1 +1,1 @@
-const JobDetailPage = () => { return React.createElement('div', null, 'JobDetailPage') }; export default JobDetailPage;
+
