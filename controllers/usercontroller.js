@@ -1,6 +1,6 @@
 const User        = require('../models/userModel');
 const JobPost     = require('../models/JobPost');
-const Application = require('../models/applicationModel');
+const Application = require('../models/Application');
 
 // GET /api/v1/users
 exports.getUsers = async (req, res, next) => {
