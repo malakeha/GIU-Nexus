@@ -1,1 +1,1 @@
-const MyApplicationsPage = () => { return React.createElement('div', null, 'MyApplicationsPage') }; export default MyApplicationsPage;
+
