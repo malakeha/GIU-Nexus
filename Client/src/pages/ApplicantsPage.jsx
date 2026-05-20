@@ -1,1 +1,1 @@
-const ApplicantsPage = () => { return React.createElement('div', null, 'ApplicantsPage') }; export default ApplicantsPage;
+
