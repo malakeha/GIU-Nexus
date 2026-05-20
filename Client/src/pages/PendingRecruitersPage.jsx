@@ -1,1 +1,1 @@
-const PendingRecruitersPage = () => { return React.createElement('div', null, 'PendingRecruitersPage') }; export default PendingRecruitersPage;
+
