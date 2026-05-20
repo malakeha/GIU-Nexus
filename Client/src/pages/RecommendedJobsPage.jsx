@@ -1,1 +1,1 @@
-const RecommendedJobsPage = () => { return React.createElement('div', null, 'RecommendedJobsPage') }; export default RecommendedJobsPage;
+
