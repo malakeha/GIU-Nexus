@@ -19,9 +19,9 @@ try {
 const res = await api.post('/auth/login', { email, password })
 login(res.data.token, res.data.user)
 const role = res.data.user.role
-if (role === 'admin') navigate('/admin/dashboard')
-else if (role === 'recruiter') navigate('/recruiter/dashboard')
-else navigate('/')
+if (role === 'admin') navigate('/home')
+else if (role === 'recruiter') navigate('/home')
+else navigate('/home')
 } catch (err) {
 setError(err.response?.data?.message || 'Login failed')
 } finally {
