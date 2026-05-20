@@ -1,1 +1,4 @@
-const AdminDashboard = () => { return React.createElement('div', null, 'AdminDashboard') }; export default AdminDashboard;
+const AdminDashboard = () => {
+    return <div><h2>AdminDashboard</h2></div>
+  }
+  export default AdminDashboard
