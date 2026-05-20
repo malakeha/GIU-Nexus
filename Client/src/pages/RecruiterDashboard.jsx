@@ -1,1 +1,1 @@
-const RecruiterDashboard = () => { return React.createElement('div', null, 'RecruiterDashboard') }; export default RecruiterDashboard;
+
